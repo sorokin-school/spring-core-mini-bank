@@ -26,10 +26,9 @@ public class AccountCreateCommand implements OperationCommand {
     @Override
     public void execute() {
         System.out.println("Enter the user id for which to create an account:");
-        Integer userId = scanner.nextInt();
+        var userId = scanner.nextLong();
         var user = userService.findUserById(userId);
         Account account = accountService.createAccount(user);
-        user.getAccountList().add(account);
         System.out.println("New account created with ID: " + account.getId() + " for user: " + user.getLogin());
     }
 

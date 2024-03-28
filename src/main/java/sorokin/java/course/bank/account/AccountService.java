@@ -1,100 +1,125 @@
 package sorokin.java.course.bank.account;
 
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.springframework.stereotype.Component;
 import sorokin.java.course.users.User;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import javax.annotation.processing.SupportedOptions;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 @Component
 public class AccountService {
 
-    private int idCounter;
-    private final Map<Integer, Account> accountMap;
+    private final SessionFactory sessionFactory;
     private final AccountProperties accountProperties;
 
-    public AccountService(AccountProperties accountProperties) {
-        this.idCounter = 0;
-        this.accountMap = new HashMap<>();
+    public AccountService(
+            SessionFactory sessionFactory,
+            AccountProperties accountProperties
+    ) {
+        this.sessionFactory = sessionFactory;
         this.accountProperties = accountProperties;
     }
 
-    public Account createAccount(User user) {
-        idCounter++;
-        Account newAccount = new Account(idCounter, user.getId(), accountProperties.getDefaultAmount());
-        accountMap.put(idCounter, newAccount);
-        return newAccount;
+    public Account createAccount(User user) { //todo executeInNewTransactionOrSupportExisted
+        return executeInTransaction(() -> {
+            Account newAccount = new Account(null, user, accountProperties.getDefaultAmount());
+            sessionFactory.getCurrentSession().persist(newAccount);
+            return newAccount;
+        });
     }
 
-    public Optional<Account> findAccountById(Integer id) {
-        return Optional.ofNullable(accountMap.get(id));
+    public void withdraw(Long fromAccountId, Integer amount) {
+        executeInTransaction(() -> {
+            Account account = findAccountById(fromAccountId)
+                    .orElseThrow(() -> new IllegalArgumentException("No such account: id=%s".formatted(fromAccountId)));
+
+            if (amount > account.getMoneyAmount()) {
+                throw new IllegalArgumentException(
+                        "No such money to withdraw from account: id=%s, moneyAmount=%s, attemptedWithdraw=%s"
+                                .formatted(account.getId(), account.getMoneyAmount(), amount)
+                );
+            }
+            account.setMoneyAmount(account.getMoneyAmount() - amount);
+            return 0;
+        });
     }
 
-    public List<Account> getUserAccounts(Integer userId) {
-        return accountMap.values().stream()
-                .filter(it -> userId.equals(it.getUserId()))
-                .toList();
+    public void deposit(Long toAccountId, Integer amount) {
+        executeInTransaction(() -> {
+            var account = findAccountById(toAccountId)
+                    .orElseThrow(() -> new IllegalArgumentException("No such account: id=%s".formatted(toAccountId)));
+            account.setMoneyAmount(account.getMoneyAmount() + amount);
+            return 0;
+        });
     }
 
-    public void withdraw(Integer fromAccountId, Integer amount) {
-        Account account = findAccountById(fromAccountId)
-                .orElseThrow(() -> new IllegalArgumentException("No such account: id=%s".formatted(fromAccountId)));
+    public Account closeAccount(Long accountId) {
+        return executeInTransaction(() -> {
+            Account accountToClose = findAccountById(accountId)
+                    .orElseThrow(() -> new IllegalArgumentException("No such account: id=%s".formatted(accountId)));
 
-        if (amount > account.getMoneyAmount()) {
-            throw new IllegalArgumentException(
-                    "No such money to withdraw from account: id=%s, moneyAmount=%s, attemptedWithdraw=%s"
-                            .formatted(account.getId(), account.getMoneyAmount(), amount)
-            );
+            var userAccounts = accountToClose.getUser().getAccountList();
+            if (userAccounts.size() == 1) {
+                throw new IllegalStateException("Can't close the only one account");
+            }
+            sessionFactory.getCurrentSession().remove(accountToClose);
+
+            var accountToTransferMoney = userAccounts.stream()
+                    .filter(it -> !it.getId().equals(accountId))
+                    .findFirst()
+                    .orElseThrow();
+
+            var newAmount = accountToTransferMoney.getMoneyAmount() + accountToClose.getMoneyAmount();
+            accountToTransferMoney.setMoneyAmount(newAmount);
+            return accountToClose;
+        });
+    }
+
+    public void transfer(Long fromAccountId, Long toAccountId, int amount) {
+        executeInTransaction(() -> {
+            Account accountFrom = findAccountById(fromAccountId)
+                    .orElseThrow(() -> new IllegalArgumentException("No such account: id=%s".formatted(fromAccountId)));
+            Account accountTo = findAccountById(toAccountId)
+                    .orElseThrow(() -> new IllegalArgumentException("No such account: id=%s".formatted(toAccountId)));
+
+            if (amount > accountFrom.getMoneyAmount()) {
+                throw new IllegalArgumentException(
+                        "No such money to transfer from account: id=%s, moneyAmount=%s, attemptedWithdraw=%s"
+                                .formatted(accountFrom.getId(), accountFrom.getMoneyAmount(), amount)
+                );
+            }
+            accountFrom.setMoneyAmount(accountFrom.getMoneyAmount() - amount);
+
+            int amountToTransfer = accountTo.getUser() == accountFrom.getUser()
+                    ? amount
+                    : (int) Math.round(amount * (1 - accountProperties.getTransferCommission()));
+            accountTo.setMoneyAmount(accountTo.getMoneyAmount() + amountToTransfer);
+            return 0;
+        });
+    }
+
+    private Optional<Account> findAccountById(Long id) {
+        return Optional.ofNullable(
+                sessionFactory.getCurrentSession().get(Account.class, id)
+        );
+    }
+
+    private<T> T executeInTransaction(
+            Supplier<T> supplier
+    ) {
+        var session = sessionFactory.getCurrentSession();
+        try {
+            session.beginTransaction();
+            var returnValue = supplier.get();
+            session.getTransaction().commit();
+            return returnValue;
+        } catch (Exception e) {
+            session.getTransaction().rollback();
+            throw e;
         }
-        account.setMoneyAmount(account.getMoneyAmount() - amount);
-    }
-
-    public void deposit(Integer toAccountId, Integer amount) {
-        Account account = findAccountById(toAccountId)
-                .orElseThrow(() -> new IllegalArgumentException("No such account: id=%s".formatted(toAccountId)));
-
-        account.setMoneyAmount(account.getMoneyAmount() + amount);
-    }
-
-    public Account closeAccount(Integer accountId) {
-        Account accountToClose = findAccountById(accountId)
-                .orElseThrow(() -> new IllegalArgumentException("No such account: id=%s".formatted(accountId)));
-        var userId = accountToClose.getUserId();
-        var userAccounts = getUserAccounts(userId);
-        if (userAccounts.size() == 1) {
-            throw new IllegalStateException("Can't close the only one account");
-        }
-        accountMap.remove(accountId);
-
-        var accountToTransferMoney = userAccounts.stream()
-                .filter(it -> it.getId() != accountId)
-                .findFirst()
-                .orElseThrow();
-
-        var newAmount = accountToTransferMoney.getMoneyAmount() + accountToClose.getMoneyAmount();
-        accountToTransferMoney.setMoneyAmount(newAmount);
-        return accountToClose;
-    }
-
-    public void transfer(int fromAccountId, int toAccountId, int amount) {
-        Account accountFrom = findAccountById(fromAccountId)
-                .orElseThrow(() -> new IllegalArgumentException("No such account: id=%s".formatted(fromAccountId)));
-        Account accountTo = findAccountById(toAccountId)
-                .orElseThrow(() -> new IllegalArgumentException("No such account: id=%s".formatted(toAccountId)));
-
-        if (amount > accountFrom.getMoneyAmount()) {
-            throw new IllegalArgumentException(
-                    "No such money to transfer from account: id=%s, moneyAmount=%s, attemptedWithdraw=%s"
-                            .formatted(accountFrom.getId(), accountFrom.getMoneyAmount(), amount)
-            );
-        }
-        accountFrom.setMoneyAmount(accountFrom.getMoneyAmount() - amount);
-
-        int amountToTransfer = accountTo.getUserId() == accountFrom.getUserId()
-                ? amount
-                : (int) Math.round(amount * (1 - accountProperties.getTransferCommission()));
-        accountTo.setMoneyAmount(accountTo.getMoneyAmount() + amountToTransfer);
     }
 }

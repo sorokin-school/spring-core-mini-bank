@@ -63,6 +63,7 @@ public class OperationsConsoleListener implements Runnable {
             OperationCommand command = commandMap.get(operationType);
             command.execute();
         } catch (Exception e) {
+            e.printStackTrace();
             System.out.printf(
                     "Error executing command %s: error=%s%n", operationType,
                     e.getMessage()

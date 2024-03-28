@@ -21,9 +21,9 @@ public class AccountTransferCommand implements OperationCommand {
     @Override
     public void execute() {
         System.out.println("Enter source account ID:");
-        int fromAccountId = Integer.parseInt(scanner.nextLine());
+        Long fromAccountId = Long.parseLong(scanner.nextLine());
         System.out.println("Enter target account ID:");
-        int toAccountId = Integer.parseInt(scanner.nextLine());
+        var toAccountId = Long.parseLong(scanner.nextLine());
         System.out.println("Enter amount to transfer:");
         int amount = Integer.parseInt(scanner.nextLine());
         accountService.transfer(fromAccountId, toAccountId, amount);

@@ -21,7 +21,8 @@ public class DepositCommand implements OperationCommand {
     @Override
     public void execute() {
         System.out.println("Enter account ID:");
-        int accountId = Integer.parseInt(scanner.nextLine());
+        var accountId = Long.valueOf(scanner.nextLine());
+
         System.out.println("Enter amount to deposit:");
         int amount = Integer.parseInt(scanner.nextLine());
 

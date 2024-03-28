@@ -21,7 +21,7 @@ public class AccountWithdrawCommand implements OperationCommand {
     @Override
     public void execute() {
         System.out.println("Enter account ID to withdraw from:");
-        int accountId = Integer.parseInt(scanner.nextLine());
+        var accountId = Long.parseLong(scanner.nextLine());
         System.out.println("Enter amount to withdraw:");
         int amount = Integer.parseInt(scanner.nextLine());
         accountService.withdraw(accountId, amount);

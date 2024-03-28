@@ -1,0 +1,41 @@
+MODULE User(auth)
+VAR
+status: { NonCritical, Trying, Critical };
+ASSIGN
+init(status) := NonCritical;
+next(status) :=
+case
+status = NonCritical : { NonCritical, Trying };
+status = Trying :
+case
+next(auth) = false : Trying;
+next(auth) = true : Critical;
+esac;
+status = Critical : { Critical, NonCritical};
+esac;
+VAR
+req: boolean;
+ASSIGN
+req := status in { Trying, Critical };
+--------------------------------------------------
+---- The Arbiter ---------------------------------
+--------------------------------------------------
+MODULE Arbiter(req0, req1)
+VAR
+auth0: boolean;
+ASSIGN
+init(auth0) := false;
+next(auth0) := req0 & !auth1;
+VAR
+auth1: boolean;
+ASSIGN
+init(auth1) := false;
+next(auth1) := req1 & !auth0;
+--------------------------------------------------
+---- The main module -----------------------------
+--------------------------------------------------
+MODULE main
+VAR
+U0: User(Ar.auth0); --- User 0
+U1: User(Ar.auth1); --- User 1
+Ar: Arbiter(U0.req, U1.req); 

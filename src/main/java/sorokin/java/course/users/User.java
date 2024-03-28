@@ -1,21 +1,31 @@
 package sorokin.java.course.users;
 
+import jakarta.persistence.*;
 import sorokin.java.course.bank.account.Account;
 
 import java.util.List;
 
+@Table(name = "users")
+@Entity
 public class User {
-    private final int id;
-    private final String login;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    @Column(name = "login", unique = true, updatable = false)
+    private String login;
+    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
     private List<Account> accountList;
 
-    public User(int id, String login, List<Account> accountList) {
+    public User() {
+    }
+
+    public User(Long id, String login, List<Account> accountList) {
         this.id = id;
         this.login = login;
         this.accountList = accountList;
     }
 
-    public int getId() {
+    public Long getId() {
         return id;
     }
 

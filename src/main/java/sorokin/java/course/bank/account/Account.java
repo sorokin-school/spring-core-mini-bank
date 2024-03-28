@@ -1,22 +1,36 @@
 package sorokin.java.course.bank.account;
 
+import jakarta.persistence.*;
+import sorokin.java.course.users.User;
+
+@Table(name = "accounts")
+@Entity
 public class Account {
-    private final int id;
-    private final int userId;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
+    @Column(name = "money_amount")
     private int moneyAmount;
 
-    public Account(int id, int userId, int moneyAmount) {
+    public Account() {
+    }
+
+    public Account(Long id, User user, int moneyAmount) {
         this.id = id;
-        this.userId = userId;
+        this.user = user;
         this.moneyAmount = moneyAmount;
     }
 
-    public int getId() {
+    public Long getId() {
         return id;
     }
 
-    public int getUserId() {
-        return userId;
+    public User getUser() {
+        return user;
     }
 
     public int getMoneyAmount() {
@@ -34,7 +48,6 @@ public class Account {
     public String toString() {
         return "Account{" +
                 "id=" + id +
-                ", userId=" + userId +
                 ", moneyAmount=" + moneyAmount +
                 '}';
     }
