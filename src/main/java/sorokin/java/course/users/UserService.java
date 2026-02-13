@@ -2,6 +2,7 @@ package sorokin.java.course.users;
 
 import org.springframework.stereotype.Component;
 import sorokin.java.course.bank.account.AccountService;
+import sorokin.java.course.model.User;
 
 import java.util.*;
 

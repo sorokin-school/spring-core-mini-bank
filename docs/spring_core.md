@@ -98,13 +98,14 @@ account.transfer-commission=0.02
 
 Следующие классы управляются Spring-контейнером и должны быть бинами:
 
-- **AppConfig** (`@Configuration`) — конфигурация контекста с `@ComponentScan` и `@PropertySource`
+- **ApplicationConfiguration** (`@Configuration`) — конфигурация контекста с `@ComponentScan` и `@PropertySource`
 - **AccountProperties** (`@Component`) — хранит настройки из `application.properties`, внедрённые через `@Value`
 - **UserService** (`@Component`) — сервис управления пользователями: создание, поиск по ID, получение списка
 - **AccountService** (`@Component`) — сервис управления счетами: создание, пополнение, снятие, перевод, закрытие
-- **ConsoleListener** (`@Component`) — слушает консольный ввод и вызывает нужные методы сервисов
+- **ConsoleInput** (`@Component`) — единая точка чтения и валидации ввода
+- **OperationsConsoleListener** (`@Component`) — слушает консольный ввод и вызывает нужные методы сервисов
 
-Эти компоненты внедряются друг в друга через конструктор. Например, `ConsoleListener` получает `UserService` и `AccountService` через `@Autowired`.
+Эти компоненты внедряются друг в друга через конструктор. Например, `OperationsConsoleListener` получает `UserService` и `AccountService` через `@Autowired`.
 
 ### Обработка ошибок
 
@@ -129,30 +130,40 @@ src/
  └── main/
       ├── java/
       │     ├── config/
-      │     │     └── AppConfig.java
+      │     │     └── ApplicationConfiguration.java
       │     ├── model/
       │     │     ├── User.java
       │     │     └── Account.java
-      │     ├── service/
-      │     │     ├── UserService.java
-      │     │     └── AccountService.java
+      │     ├── users/
+      │     │     └── UserService.java
+      │     ├── bank/
+      │     │     └── account/
+      │     │           ├── AccountService.java
+      │     │           └── AccountProperties.java
       │     ├── console/
-      │     │     └── ConsoleListener.java
-      │     └── App.java
+      │     │     ├── ConsoleInput.java
+      │     │     └── OperationsConsoleListener.java
+      │     ├── operations/
+      │     │     ├── ConsoleOperationType.java
+      │     │     ├── OperationCommand.java
+      │     │     └── commands/
+      │     └── Main.java
       └── resources/
             └── application.properties
 ```
+
+Пакет `operations` хранит типы команд и их реализации, а пакет `console` отвечает за ввод данных и основной цикл обработки.
 
 ## Рекомендуемый порядок реализации
 
 Если не знаете с чего начать, попробуйте двигаться в таком порядке:
 
-1. Создайте `AppConfig` с аннотациями `@Configuration`, `@ComponentScan` и `@PropertySource`
+1. Создайте `ApplicationConfiguration` с аннотациями `@Configuration`, `@ComponentScan` и `@PropertySource`
 2. Создайте модели данных (`User`, `Account`) — обычные POJO с полями, конструктором, геттерами и сеттерами
 3. Реализуйте `AccountProperties` — компонент, который через `@Value` получает настройки из файла
 4. Реализуйте `UserService` и `AccountService`. Данные храните в `Map<Integer, User>` и `Map<Integer, Account>`
-5. Реализуйте `ConsoleListener` — используйте `Scanner` для чтения команд из консоли
-6. Создайте точку входа `App.java` — создание `AnnotationConfigApplicationContext` и запуск `ConsoleListener`
+5. Реализуйте `ConsoleInput` и `OperationsConsoleListener` — используйте `Scanner` для чтения команд из консоли
+6. Создайте точку входа `Main.java` — создание `AnnotationConfigApplicationContext` и запуск `OperationsConsoleListener`
 7. Добавьте обработку ошибок с понятными сообщениями
 
 ## Зависимости (pom.xml)

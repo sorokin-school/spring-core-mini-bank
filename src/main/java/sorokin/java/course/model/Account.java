@@ -1,4 +1,4 @@
-package sorokin.java.course.bank.account;
+package sorokin.java.course.model;
 
 public class Account {
 
@@ -40,4 +40,3 @@ public class Account {
                 '}';
     }
 }
-

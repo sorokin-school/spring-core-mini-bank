@@ -1,7 +1,8 @@
 package sorokin.java.course.bank.account;
 
 import org.springframework.stereotype.Component;
-import sorokin.java.course.users.User;
+import sorokin.java.course.model.Account;
+import sorokin.java.course.model.User;
 
 import java.util.HashMap;
 import java.util.List;

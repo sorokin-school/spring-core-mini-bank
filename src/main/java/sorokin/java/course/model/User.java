@@ -1,6 +1,4 @@
-package sorokin.java.course.users;
-
-import sorokin.java.course.bank.account.Account;
+package sorokin.java.course.model;
 
 import java.util.List;
 

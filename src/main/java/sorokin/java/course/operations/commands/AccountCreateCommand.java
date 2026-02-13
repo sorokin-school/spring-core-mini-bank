@@ -1,7 +1,7 @@
 package sorokin.java.course.operations.commands;
 
 import org.springframework.stereotype.Component;
-import sorokin.java.course.bank.account.Account;
+import sorokin.java.course.model.Account;
 import sorokin.java.course.bank.account.AccountService;
 import sorokin.java.course.console.ConsoleInput;
 import sorokin.java.course.operations.ConsoleOperationType;
