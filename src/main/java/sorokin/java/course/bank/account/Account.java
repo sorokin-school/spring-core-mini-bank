@@ -1,6 +1,7 @@
 package sorokin.java.course.bank.account;
 
 public class Account {
+
     private final int id;
     private final int userId;
     private int moneyAmount;

@@ -21,21 +21,25 @@ public class UserService {
     }
 
     public User createUser(String login) {
-        if (takenLogins.contains(login)) {
-            throw new IllegalArgumentException("User already exists with login=%s".formatted(login));
+        String normalizedLogin = validateLogin(login);
+        if (takenLogins.contains(normalizedLogin)) {
+            throw new IllegalArgumentException("User already exists with login=%s".formatted(normalizedLogin));
         }
 
         idCounter++;
-        var user = new User(idCounter, login, new ArrayList<>());
+        var user = new User(idCounter, normalizedLogin, new ArrayList<>());
         var defaultAccount = accountService.createAccount(user);
         user.getAccountList().add(defaultAccount);
 
         userMap.put(idCounter, user);
-        takenLogins.add(login);
+        takenLogins.add(normalizedLogin);
         return user;
     }
 
     public User findUserById(Integer id) {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("user id must be > 0");
+        }
         var user = userMap.get(id);
         if (user == null) {
             throw new IllegalArgumentException("No such user with id=%s".formatted(id));
@@ -45,5 +49,12 @@ public class UserService {
 
     public List<User> findAll() {
         return userMap.values().stream().toList();
+    }
+
+    private String validateLogin(String login) {
+        if (login == null || login.isBlank()) {
+            throw new IllegalArgumentException("login must not be blank");
+        }
+        return login.trim();
     }
 }

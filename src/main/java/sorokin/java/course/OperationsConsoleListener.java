@@ -1,93 +1,64 @@
 package sorokin.java.course;
 
 import org.springframework.stereotype.Component;
+import sorokin.java.course.console.ConsoleInput;
 import sorokin.java.course.operations.ConsoleOperationType;
 import sorokin.java.course.operations.OperationCommand;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.stream.Collectors;
 
 @Component
-public class OperationsConsoleListener implements Runnable {
+public class OperationsConsoleListener {
 
     private final Map<ConsoleOperationType, OperationCommand> commandMap;
-    private final Scanner scanner;
+    private final ConsoleInput consoleInput;
+    private boolean running;
 
     public OperationsConsoleListener(
             List<OperationCommand> operationCommandList,
-            Scanner scanner
+            ConsoleInput consoleInput
     ) {
         this.commandMap = operationCommandList.stream()
                 .collect(Collectors.toMap(OperationCommand::getOperationType, it -> it));
-        this.scanner = scanner;
+        this.consoleInput = consoleInput;
+        this.running = true;
     }
 
-    @Override
-    public void run() {
+    public void runBank() {
         init();
         process();
-        destroy();
     }
 
     private void process() {
-        while (!Thread.currentThread().isInterrupted()) {
-            System.out.println("Please enter one of operation type:");
-            printAllAvailableOperations();
-            var nextOperation = listenNextOperationType();
-            if (nextOperation == null) {
-                return;
-            }
+        while (running) {
+            var nextOperation = consoleInput.readOperationType();
             processNextCommand(nextOperation);
-        }
-    }
-
-    private ConsoleOperationType listenNextOperationType() {
-        while (!Thread.currentThread().isInterrupted()) {
-            var operation = scanner.nextLine();
-            if (operation.isBlank()) {
-                continue;
-            }
-            try {
-                return ConsoleOperationType.valueOf(operation);
-            } catch (IllegalArgumentException e) {
-                System.out.println("No such command found");
+            if (nextOperation == ConsoleOperationType.EXIT) {
+                running = false;
             }
         }
-        return null;
     }
 
     private void processNextCommand(ConsoleOperationType operationType) {
         try {
             OperationCommand command = commandMap.get(operationType);
+            if (command == null) {
+                throw new IllegalStateException("No command handler for " + operationType);
+            }
             command.execute();
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            System.out.println("Error: " + e.getMessage());
         } catch (Exception e) {
-            System.out.printf(
-                    "Error executing command %s: error=%s%n", operationType,
-                    e.getMessage()
-            );
+            String message = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+            System.out.println("Error: " + message);
         }
     }
 
-    private void printAllAvailableOperations() {
-        StringBuilder stringBuilder = new StringBuilder();
-        commandMap.keySet()
-                .forEach(consoleOperationType -> stringBuilder
-                        .append("-")
-                        .append(consoleOperationType)
-                        .append("\n")
-                );
-        System.out.println(stringBuilder);
-    }
-
     private void init() {
-        System.out.println("Start listening console operations");
-    }
-
-    private void destroy() {
-        System.out.println("End listening console operations");
+        System.out.println("MiniBank started. Type EXIT to stop.");
+        consoleInput.printAvailableCommands();
     }
 
 }
-

@@ -3,34 +3,31 @@ package sorokin.java.course.operations.commands;
 import org.springframework.stereotype.Component;
 import sorokin.java.course.bank.account.Account;
 import sorokin.java.course.bank.account.AccountService;
+import sorokin.java.course.console.ConsoleInput;
 import sorokin.java.course.operations.ConsoleOperationType;
 import sorokin.java.course.operations.OperationCommand;
-import sorokin.java.course.users.User;
 import sorokin.java.course.users.UserService;
-
-import java.util.Scanner;
 
 @Component
 public class AccountCreateCommand implements OperationCommand {
 
     private final AccountService accountService;
     private final UserService userService;
-    private final Scanner scanner;
+    private final ConsoleInput consoleInput;
 
-    public AccountCreateCommand(AccountService accountService, UserService userService, Scanner scanner) {
+    public AccountCreateCommand(AccountService accountService, UserService userService, ConsoleInput consoleInput) {
         this.accountService = accountService;
         this.userService = userService;
-        this.scanner = scanner;
+        this.consoleInput = consoleInput;
     }
 
     @Override
     public void execute() {
-        System.out.println("Enter the user id for which to create an account:");
-        Integer userId = scanner.nextInt();
+        int userId = consoleInput.readPositiveInt("Enter user id:", "user id");
         var user = userService.findUserById(userId);
         Account account = accountService.createAccount(user);
         user.getAccountList().add(account);
-        System.out.println("New account created with ID: " + account.getId() + " for user: " + user.getLogin());
+        System.out.println("Account created: " + account);
     }
 
     @Override
@@ -38,4 +35,3 @@ public class AccountCreateCommand implements OperationCommand {
         return ConsoleOperationType.ACCOUNT_CREATE;
     }
 }
-
