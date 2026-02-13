@@ -1,4 +1,4 @@
-package sorokin.java.course.model;
+package sorokin.java.course.account;
 
 public class Account {
 

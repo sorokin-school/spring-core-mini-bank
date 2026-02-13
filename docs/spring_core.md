@@ -131,15 +131,13 @@ src/
       ├── java/
       │     ├── config/
       │     │     └── ApplicationConfiguration.java
-      │     ├── model/
+      │     ├── user/
       │     │     ├── User.java
-      │     │     └── Account.java
-      │     ├── users/
       │     │     └── UserService.java
-      │     ├── bank/
-      │     │     └── account/
-      │     │           ├── AccountService.java
-      │     │           └── AccountProperties.java
+      │     ├── account/
+      │     │     ├── Account.java
+      │     │     ├── AccountService.java
+      │     │     └── AccountProperties.java
       │     ├── console/
       │     │     ├── ConsoleInput.java
       │     │     └── OperationsConsoleListener.java

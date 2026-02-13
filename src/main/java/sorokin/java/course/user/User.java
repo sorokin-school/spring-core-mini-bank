@@ -1,6 +1,8 @@
-package sorokin.java.course.model;
+package sorokin.java.course.user;
 
 import java.util.List;
+
+import sorokin.java.course.account.Account;
 
 public class User {
     private final int id;

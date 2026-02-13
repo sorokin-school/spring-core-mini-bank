@@ -3,7 +3,7 @@ package sorokin.java.course.operations.commands;
 import org.springframework.stereotype.Component;
 import sorokin.java.course.operations.ConsoleOperationType;
 import sorokin.java.course.operations.OperationCommand;
-import sorokin.java.course.users.UserService;
+import sorokin.java.course.user.UserService;
 
 @Component
 public class ShowAllUsersCommand implements OperationCommand {

@@ -1,8 +1,8 @@
-package sorokin.java.course.users;
+package sorokin.java.course.user;
 
 import org.springframework.stereotype.Component;
-import sorokin.java.course.bank.account.AccountService;
-import sorokin.java.course.model.User;
+import sorokin.java.course.account.AccountService;
+import sorokin.java.course.user.User;
 
 import java.util.*;
 
