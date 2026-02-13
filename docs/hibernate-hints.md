@@ -36,12 +36,52 @@ public class Account {
 ## 2) Как настроить `SessionFactory` вручную
 Используйте `@Configuration` + `@Bean` и задайте свойства через `setProperty`.
 
+Полный пример конфигурации:
+```java
+@Configuration
+public class HibernateConfiguration {
+
+    @Bean
+    public SessionFactory sessionFactory() {
+        org.hibernate.cfg.Configuration configuration = new org.hibernate.cfg.Configuration();
+
+        configuration
+                .addAnnotatedClass(User.class)
+                .addAnnotatedClass(Account.class)
+                .setProperty("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect")
+                .setProperty("hibernate.connection.driver_class", "org.postgresql.Driver")
+                .setProperty("hibernate.connection.url", "jdbc:postgresql://localhost:5432/bank")
+                .setProperty("hibernate.connection.username", "postgres")
+                .setProperty("hibernate.connection.password", "root")
+                .setProperty("hibernate.show_sql", "true")
+                .setProperty("hibernate.format_sql", "true")
+                .setProperty("hibernate.current_session_context_class", "thread")
+                .setProperty("hibernate.hbm2ddl.auto", "update");
+
+        ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder()
+                .applySettings(configuration.getProperties())
+                .build();
+
+        return configuration.buildSessionFactory(serviceRegistry);
+    }
+}
+```
+
 Важно:
 - включите `hibernate.current_session_context_class=thread`;
 - включите `show_sql` и `format_sql` для отладки;
 - добавьте все entity через `addAnnotatedClass(...)`.
 
 ## 3) Как сделать транзакционную обвязку с поддержкой nested-вызовов
+Зачем это нужно:
+- один метод может вызывать другой, и оба работают с БД;
+- если каждый метод всегда открывает и закрывает транзакцию, возникают двойные `commit/rollback`;
+- при ошибке изменения могут частично сохраниться.
+
+Решение:
+- если транзакция уже активна, просто присоединиться к ней;
+- commit/rollback/close выполняет только тот метод, который открыл транзакцию.
+
 Рекомендуемый шаблон:
 - получить `Session` через `getCurrentSession()`;
 - проверить статус текущей транзакции;
@@ -118,21 +158,13 @@ Error: insufficient funds on account id=1, moneyAmount=0, attempted withdraw=100
 
 Это проверяет, что транзакция откатывается полностью.
 
-## 8) Проблемы `Scanner` в консольных командах
-Типичная ошибка: смешивать `nextInt()`/`nextLong()` и `nextLine()`.
-
-Надёжный подход:
-- всегда читать через `nextLine()`;
-- вручную парсить в `int/long`;
-- централизовать парсинг в helper-классе.
-
-## 9) Что логировать во время отладки
+## 8) Что логировать во время отладки
 Минимум полезного для диагностики:
 - команда и входные параметры;
 - понятные `Error: ...` сообщения для пользователя;
 - SQL Hibernate (`show_sql`, `format_sql`) для проверки, что ORM работает ожидаемо.
 
-## 10) Если что-то «работает не так»
+## 9) Если что-то «работает не так»
 Быстрый чек:
 1. База поднята и доступна по URL из properties.
 2. Все сущности добавлены в Hibernate configuration.
