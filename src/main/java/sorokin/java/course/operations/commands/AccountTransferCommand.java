@@ -1,33 +1,50 @@
 package sorokin.java.course.operations.commands;
 
 import org.springframework.stereotype.Component;
-import sorokin.java.course.bank.account.AccountService;
+import sorokin.java.course.account.AccountService;
+import sorokin.java.course.console.ConsoleInput;
 import sorokin.java.course.operations.ConsoleOperationType;
 import sorokin.java.course.operations.OperationCommand;
-
-import java.util.Scanner;
 
 @Component
 public class AccountTransferCommand implements OperationCommand {
 
     private final AccountService accountService;
-    private final Scanner scanner;
+    private final ConsoleInput consoleInput;
 
-    public AccountTransferCommand(AccountService accountService, Scanner scanner) {
+    public AccountTransferCommand(AccountService accountService, ConsoleInput consoleInput) {
         this.accountService = accountService;
-        this.scanner = scanner;
+        this.consoleInput = consoleInput;
     }
 
     @Override
     public void execute() {
-        System.out.println("Enter source account ID:");
-        Long fromAccountId = Long.parseLong(scanner.nextLine());
-        System.out.println("Enter target account ID:");
-        var toAccountId = Long.parseLong(scanner.nextLine());
-        System.out.println("Enter amount to transfer:");
-        int amount = Integer.parseInt(scanner.nextLine());
-        accountService.transfer(fromAccountId, toAccountId, amount);
-        System.out.println("Amount " + amount + " transferred from account ID " + fromAccountId + " to account ID " + toAccountId + ".");
+        long fromAccountId = consoleInput.readPositiveLong("Enter source account id:", "source account id");
+        long toAccountId = consoleInput.readPositiveLong("Enter target account id:", "target account id");
+        if (fromAccountId == toAccountId) {
+            throw new IllegalArgumentException("source and target account id must be different");
+        }
+
+        int amount = consoleInput.readPositiveInt("Enter amount:", "amount");
+        AccountService.TransferResult result = accountService.transfer(fromAccountId, toAccountId, amount);
+
+        if (result.sameUser()) {
+            System.out.println(
+                    "Transfer completed from account " + result.fromAccountId() +
+                            " to account " + result.toAccountId() +
+                            ". Amount: " + result.amount() +
+                            " (no commission, same user)"
+            );
+            return;
+        }
+
+        System.out.println(
+                "Transfer completed from account " + result.fromAccountId() +
+                        " to account " + result.toAccountId() +
+                        ". Amount: " + result.amount() +
+                        ", commission: " + result.commissionAmount() +
+                        ", recipient received: " + result.recipientAmount()
+        );
     }
 
     @Override

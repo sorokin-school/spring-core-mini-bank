@@ -1,91 +1,70 @@
 package sorokin.java.course;
 
 import org.hibernate.SessionFactory;
-import org.hibernate.SessionFactoryObserver;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.service.ServiceRegistry;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import sorokin.java.course.bank.account.Account;
-import sorokin.java.course.users.User;
+import sorokin.java.course.account.Account;
+import sorokin.java.course.user.User;
 
 @Configuration
 public class HibernateConfiguration {
 
+    private final String driverClass;
+    private final String url;
+    private final String username;
+    private final String password;
+    private final String dialect;
+    private final String hbm2ddlAuto;
+    private final String showSql;
+    private final String formatSql;
+    private final String currentSessionContextClass;
+
+    public HibernateConfiguration(
+            @Value("${db.driver}") String driverClass,
+            @Value("${db.url}") String url,
+            @Value("${db.username}") String username,
+            @Value("${db.password}") String password,
+            @Value("${db.dialect}") String dialect,
+            @Value("${hibernate.hbm2ddl.auto}") String hbm2ddlAuto,
+            @Value("${hibernate.show_sql}") String showSql,
+            @Value("${hibernate.format_sql}") String formatSql,
+            @Value("${hibernate.current_session_context_class:thread}") String currentSessionContextClass
+    ) {
+        this.driverClass = driverClass;
+        this.url = url;
+        this.username = username;
+        this.password = password;
+        this.dialect = dialect;
+        this.hbm2ddlAuto = hbm2ddlAuto;
+        this.showSql = showSql;
+        this.formatSql = formatSql;
+        this.currentSessionContextClass = currentSessionContextClass;
+    }
 
     @Bean
     public SessionFactory sessionFactory() {
-        try {
-            // Создание объекта Configuration.
-            org.hibernate.cfg.Configuration configuration = new org.hibernate.cfg.Configuration();
+        org.hibernate.cfg.Configuration configuration = new org.hibernate.cfg.Configuration();
 
-            configuration
-                    .addAnnotatedClass(User.class)
-                    .addAnnotatedClass(Account.class)
-                    .addPackage("sorokin.java.course")
-                    .setProperty("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect")
-                    .setProperty("hibernate.connection.driver_class", "org.postgresql.Driver")
-                    .setProperty("hibernate.connection.url", "jdbc:postgresql://localhost:5432/bank")
-                    .setProperty("hibernate.connection.username", "postgres")
-                    .setProperty("hibernate.connection.password", "root")
-                    .setProperty("hibernate.show_sql", "true")
-                    .setProperty("hibernate.current_session_context_class", "thread")
-                    .setProperty("hibernate.hbm2ddl.auto", "update");
+        configuration
+                .addAnnotatedClass(User.class)
+                .addAnnotatedClass(Account.class)
+                .setProperty("hibernate.connection.driver_class", driverClass)
+                .setProperty("hibernate.connection.url", url)
+                .setProperty("hibernate.connection.username", username)
+                .setProperty("hibernate.connection.password", password)
+                .setProperty("hibernate.dialect", dialect)
+                .setProperty("hibernate.hbm2ddl.auto", hbm2ddlAuto)
+                .setProperty("hibernate.show_sql", showSql)
+                .setProperty("hibernate.format_sql", formatSql)
+                .setProperty("hibernate.current_session_context_class", currentSessionContextClass);
 
-            // Создание ServiceRegistry из конфигурации Hibernate.
-            ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder()
-                    .applySettings(configuration.getProperties())
-                    .build();
+        ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder()
+                .applySettings(configuration.getProperties())
+                .build();
 
-            // Создание SessionFactory из ServiceRegistry.
-            return configuration
-                    .buildSessionFactory(serviceRegistry);
-        } catch (Throwable ex) {
-            System.err.println("Initial SessionFactory creation failed." + ex);
-            throw new ExceptionInInitializerError(ex);
-        }
-
+        return configuration.buildSessionFactory(serviceRegistry);
     }
-
-//    private Properties hibernateProperties() {
-//        Properties hibernateProperties = new Properties();
-//        hibernateProperties.setProperty("hibernate.hbm2ddl.auto", "update");
-//        hibernateProperties.setProperty("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
-//        // Дополнительные свойства Hibernate...
-//        return hibernateProperties;
-//    }
-//
-//    private static SessionFactory buildSessionFactory() {
-//        try {
-//            // Создаем конфигурацию HikariCP
-//            HikariConfig hikariConfig = new HikariConfig();
-//            hikariConfig.setDriverClassName("org.postgresql.Driver");
-//            hikariConfig.setJdbcUrl("jdbc:postgresql://localhost:5432/yourdatabase");
-//            hikariConfig.setUsername("yourusername");
-//            hikariConfig.setPassword("yourpassword");
-//
-//            // Создаем DataSource с конфигурацией HikariCP
-//            DataSource dataSource = new HikariDataSource(hikariConfig);
-//
-//            // Создаем объект Configuration Hibernate.
-//            Configuration configuration = new Configuration();
-//            configuration.addAnnotatedClass(YourEntityClass.class); // Замените YourEntityClass на ваш класс сущности
-//
-//            // Настройка свойств Hibernate
-//            configuration.setProperty("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
-//            configuration.setProperty("hibernate.show_sql", "true");
-//            configuration.setProperty("hibernate.hbm2ddl.auto", "update");
-//
-//            // Создаем ServiceRegistry, добавляя DataSource
-//            ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder()
-//                    .applySettings(configuration.getProperties())
-//                    .applySetting("hibernate.connection.datasource", dataSource)
-//                    .build();
-//
-//            // Создаем SessionFactory
-//            return configuration.buildSessionFactory(serviceRegistry);
-//        } catch (Throwable ex) {
-//            System.err.println("Initial SessionFactory creation failed." + ex);
-//            throw new ExceptionInInitializerError(ex);
-//        }
 }

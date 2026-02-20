@@ -1,4 +1,4 @@
-package sorokin.java.course.bank.account;
+package sorokin.java.course.account;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;

@@ -1,33 +1,29 @@
 package sorokin.java.course.operations.commands;
 
 import org.springframework.stereotype.Component;
-import sorokin.java.course.bank.account.AccountService;
+import sorokin.java.course.account.AccountService;
+import sorokin.java.course.console.ConsoleInput;
 import sorokin.java.course.operations.ConsoleOperationType;
 import sorokin.java.course.operations.OperationCommand;
-
-import java.util.Scanner;
 
 @Component
 public class DepositCommand implements OperationCommand {
 
     private final AccountService accountService;
-    private final Scanner scanner;
+    private final ConsoleInput consoleInput;
 
-    public DepositCommand(AccountService accountService, Scanner scanner) {
+    public DepositCommand(AccountService accountService, ConsoleInput consoleInput) {
         this.accountService = accountService;
-        this.scanner = scanner;
+        this.consoleInput = consoleInput;
     }
 
     @Override
     public void execute() {
-        System.out.println("Enter account ID:");
-        var accountId = Long.valueOf(scanner.nextLine());
-
-        System.out.println("Enter amount to deposit:");
-        int amount = Integer.parseInt(scanner.nextLine());
+        long accountId = consoleInput.readPositiveLong("Enter account id:", "account id");
+        int amount = consoleInput.readPositiveInt("Enter amount:", "amount");
 
         accountService.deposit(accountId, amount);
-        System.out.println("Amount " + amount + " deposited to account ID: " + accountId);
+        System.out.println("Deposited " + amount + " to account " + accountId + ".");
     }
 
     @Override
@@ -35,4 +31,3 @@ public class DepositCommand implements OperationCommand {
         return ConsoleOperationType.ACCOUNT_DEPOSIT;
     }
 }
-

@@ -1,32 +1,31 @@
 package sorokin.java.course.operations.commands;
 
 import org.springframework.stereotype.Component;
-import sorokin.java.course.bank.account.AccountService;
+import sorokin.java.course.account.AccountService;
+import sorokin.java.course.console.ConsoleInput;
 import sorokin.java.course.operations.ConsoleOperationType;
 import sorokin.java.course.operations.OperationCommand;
-import sorokin.java.course.users.UserService;
-
-import java.util.Scanner;
 
 @Component
 public class AccountCloseCommand implements OperationCommand {
 
     private final AccountService accountService;
-    private final UserService userService;
-    private final Scanner scanner;
+    private final ConsoleInput consoleInput;
 
-    public AccountCloseCommand(AccountService accountService, UserService userService, Scanner scanner) {
+    public AccountCloseCommand(AccountService accountService, ConsoleInput consoleInput) {
         this.accountService = accountService;
-        this.userService = userService;
-        this.scanner = scanner;
+        this.consoleInput = consoleInput;
     }
 
     @Override
     public void execute() {
-        System.out.println("Enter account ID to close:");
-        var accountId = scanner.nextLong();
-        accountService.closeAccount(accountId);
-        System.out.println("Account with ID " + accountId + " has been closed.");
+        long accountId = consoleInput.readPositiveLong("Enter account id to close:", "account id");
+        AccountService.CloseAccountResult result = accountService.closeAccount(accountId);
+        System.out.println(
+                "Account " + result.closedAccountId() +
+                        " closed. Remaining balance " + result.transferredAmount() +
+                        " transferred to account " + result.targetAccountId() + "."
+        );
     }
 
     @Override
@@ -34,4 +33,3 @@ public class AccountCloseCommand implements OperationCommand {
         return ConsoleOperationType.ACCOUNT_CLOSE;
     }
 }
-
